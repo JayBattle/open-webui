@@ -1,0 +1,45 @@
+# summary: runs open-webui via docker
+# requirements: docker, docker compose, docker model runner
+# syntax: sudo docker compose up -d
+# -- to run via command line --
+# sudo docker run -p 3000:8080 --gpus all --network=host -v /home/jay/Apps/open-webui:/app/backend/data -e OLLAMA_BASE_URL=http://localhost:11434 PORT=3001 --name open-webui --restart=unless-stopped ghcr.io/open-webui/open-webui:cuda
+
+services:
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:cuda
+    container_name: open-webui
+    network_mode: host
+    ports:
+      - "3000:8080"
+    volumes:
+      - /home/jay/Apps/open-webui:/app/backend/data
+    models:
+      smollm2:
+        endpoint_var: AI_MODEL_URL
+        model_var: AI_MODEL_NAME
+      gemma3:
+        endpoint_var: OPENAI_API_BASE_URL
+        model_var: DEFAULT_MODELS
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    environment:
+      PORT: 3001
+      OLLAMA_BASE_URL: http://localhost:11434
+    restart: 'unless-stopped'
+
+models:
+  smollm2:
+    model: ai/smollm2
+  gemma3:
+    model: ai/gemma3-qat:1B-Q4_K_M # Quantized. Needs 1GB of GPU memory
+    # model: ai/gemma3:4B-F16 # larger model that needs at least 8GB of GPU memory  
+    # https://hub.docker.com/r/ai/gemma3
+    context_size: 33000
+
+volumes:
+  open-webui:

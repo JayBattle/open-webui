@@ -1,0 +1,44 @@
+# This is a Docker Compose file for running the Open WebUI with a specific model.
+# It uses the new provider feature of Compose to specify the model to be downloaded.
+# Note that Open WebUI lets you select any downloaded model, but it won't auto-download them
+# so the provider service will ensure it's downloaded first.
+# https://docs.docker.com/compose/how-tos/model-runner/
+
+
+# Original:
+# docker run -d -p 3000:8080 --gpus all --add-host=host.docker.internal:host-gateway -v open-webui:/app/backend/data --name open-webui --restart always ghcr.io/open-webui/open-webui:cuda
+
+# AI
+# docker run -d --network=host -v open-webui:/app/backend/data -e OLLAMA_BASE_URL=http://127.0.0.1:11434 -e PORT=3001 --name open-webui --restart always ghcr.io/open-webui/open-webui:main 
+
+# Edited:
+# docker run -d -p 3000:8080 --gpus all --network=host -v open-webui:/app/backend/data -e PORT=3001 -e OLLAMA_BASE_URL=http://localhost:11434 --name open-webui --restart=unless-stopped ghcr.io/open-webui/open-webui:cuda
+
+version: '3.3'
+services:
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: open-webui
+    network_mode: host
+    ports:
+      - "3000:8080"
+    volumes:
+      - /home/jay/Apps/open-webui:/app/backend/data
+    models:
+      gemma:
+        # this sets the Open WebUI envvars to use the gemma model and the model runner URL
+        endpoint_var: OPENAI_API_BASE_URL
+        model_var: DEFAULT_MODELS
+    environment:
+      PORT: 3001
+    restart: 'unless-stopped'
+
+models:
+  gemma:
+    model: ai/gemma3-qat:1B-Q4_K_M # Quantized. Needs 1GB of GPU memory
+    # model: ai/gemma3:4B-F16 # bigger model that needs at least 8GB of GPU memory  
+    # https://hub.docker.com/r/ai/gemma3
+    context_size: 33000
+
+volumes:
+  open-webui:
